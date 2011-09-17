@@ -80,8 +80,8 @@
   [dir]
   (->> (io/file dir)
        (file-seq)
-       (filter #(re-find #"\.clj$" (.getAbsolutePath %)))
-       (map #(.getAbsolutePath %))
+       (filter #(re-find #"\.clj$" (.getCanonicalPath %)))
+       (map #(.getCanonicalPath %))
        (sort)))
 
 ;; ## Project Info Parsing
@@ -211,10 +211,9 @@
   (if (nil? sources)
     (find-clojure-file-paths "./src")
     (->> sources
-         (map #(if (dir? %)
-                 (find-clojure-file-paths %)
-                 [%]))
-         (flatten))))
+         (mapcat #(if (dir? %)
+                    (find-clojure-file-paths %)
+                    [(.getCanonicalPath (io/file %))])))))
 
 (defn usage []
   (println "marginalia <src1> ... <src-n>"))
@@ -252,7 +251,7 @@
      [js j "Additional javascript resources <resource1>;<resource2>;...
            If not given will be taken from project.clj"]
      src]
-    (let [sources (format-sources (seq src))]
+    (let [sources (distinct (format-sources (seq src)))]
       (if-not sources
         (do
           (println "Wrong number of arguments passed to marginalia.")
